@@ -1,0 +1,121 @@
+#-------------------------------------------------------------------------------
+# Name:        FileStorage Module
+# Purpose:
+#
+# Author:      Karthikeyan
+#
+# Created:     30-12-2020
+# Copyright:   (c) Karthikeyan 2020
+# Licence:     <your licence>
+#-------------------------------------------------------------------------------
+
+import threading
+		#this is for python 3.0 and above. use import thread for python2.0 versions
+from threading import*
+import time
+import datetime
+import sys
+#d={} #'d' is the dictionary in which we store data
+
+		#for create operation
+		#use syntax "create(key_name,value,timeout_value)" timeout is optional you can continue by passing two arguments without timeout
+
+def create(key,value,dictvalue,file_object,timeout=0):
+
+  if key in dictvalue:
+    stri='error: this key already exists',key #error message1
+    return stri
+  else:
+    if(key.isalpha()):
+        if sys.getsizeof(dictvalue)<(1024*1020*1024) and sys.getsizeof(value)<=(16*1024*1024): #constraints for file size less than 1GB and Jasonobject value less than 16KB
+            if len(key)<=32: #constraints for input key_name capped at 32chars
+                file_object.write(key+'='+value+';'+str(timeout)+';'+str(time.time())+'\n')
+                file_object.close()
+                stri =key,'Key created Successfully at database'
+                return stri
+            else:
+                stri='Length of key character is more than 32 characters'
+                return stri
+
+        else:
+            stri='Memory Limit exceeded!!!!'
+    else:
+        stri='Error: Invalind key_name!! key_name must contain only alphabets and no special characters or numbers"'#error message3
+        return stri
+
+		#for read operation
+		#use syntax "read(key_name)"
+
+def read(key,dictvalue):
+    if key not in dictvalue:
+        print("error: given key does not exist in database. Please enter a valid key") #error message4
+    else:
+        b=dictvalue[key]
+        value=list(b.split(';'))
+        timeoutVal=float(value[1])
+        expiretime =float(value[2])
+        timediff =time.time()-expiretime
+        if timeoutVal!=0:
+            if timediff<=timeoutVal: #comparing the present time with expiry time
+                print("here the time difference",timediff)
+
+                stri=str(key)+":"+str(value[0]) #to return the value in the format of JasonObject i.e.,"key_name:value"
+                return stri
+            else:
+                stri ='error: time-to-live of',key,'has expired with the difference of',timediff #error message5
+                return stri
+        else:
+            stri=str(key)+":"+str(value[0])
+            return stri
+
+		#for delete operation
+		#use syntax "delete(key_name)"
+
+def delete(key,dictvalue,file_path):
+    if key not in dictvalue:
+        stri='error: given key does not exist in database. Please enter a valid key' #error message4
+        return stri
+    else:
+
+        b=dictvalue[key]
+        value=list(b.split(';'))
+        timeoutVal=float(value[1])
+        expiretime =float(value[2])
+        timediff =time.time()-expiretime
+        if timeoutVal!=0:
+            if timediff<=timeoutVal: #comparing the present time with expiry time
+                del dictvalue[key]
+                with open(str(file_path), "r+") as f:
+                    e = f.readlines()
+                    f.seek(0)
+                    for i in e:
+                        if key in i:
+                            pass
+                        else:
+                            f.write(i)
+                    f.truncate()
+
+                stri= 'key is successfully deleted',key
+                return stri
+            else:
+                stri ='error: time-to-live of',key,'has expired' #error message5
+                return stri
+        else:
+            del dictvalue[key]
+            with open(str(file_path), "r+") as f:
+                e = f.readlines()
+                f.seek(0)
+                for i in e:
+                    if key in i:
+                        pass
+                    else:
+                        f.write(i)
+                f.truncate()
+
+            stri= 'key is successfully deleted',key
+            return stri
+
+
+
+if(__name__=='__main__'):
+    print('FileStorage methods called')
